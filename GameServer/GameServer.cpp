@@ -1,4 +1,4 @@
-// GameServer.cpp : This file contains the 'main' function. Program execution begins and ends there.
+ï»¿// GameServer.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 #include "pch.h"
 #include <iostream>
@@ -13,32 +13,44 @@ mutex m;
 queue<int32> q;
 HANDLE handle;
 
+// User level object -> ë™ì¼í•œ í”„ë¡œê·¸ë¨ (í”„ë¡œì„¸ìŠ¤) ë‚´ì—ì„œë§Œ ê³µìœ 
+condition_variable cv; // -> ë³´í†µ ì¡°ê±´ ë³€ìˆ˜ë¥¼ ì´ìš©í•˜ëŠ” ë°©ì‹ì„ ì¶”ì²œ (linux, windows ë‘˜ë‹¤ ì‚¬ìš©)
+
 void Producer() {
 	while (true) {
 		{
+			// 1. ë½ ì¡ê³ 
+			// 2. ê³µìœ  ë³€ìˆ˜ ê°’ ìˆ˜ì •
+			// 3. ë½ í’€ê³ 
+			// 4. ì¡°ê±´ ë³€ìˆ˜ì— ì•Œë¦¼
 			unique_lock<mutex> lock(m);
 			q.push(100);
 		}
 
-		::SetEvent(handle); // ÀÌº¥Æ® ½ÅÈ£ »óÅÂ·Î º¯°æ
-		this_thread::sleep_for(chrono::milliseconds(10000));
+		cv.notify_one(); // wait ì¤‘ì¸ ìŠ¤ë ˆë“œ ì¤‘ í•˜ë‚˜ë¥¼ ê¹¨ì›€
+
+		// this_thread::sleep_for(chrono::milliseconds(10000));
 	}
 }
 
 void Consumer() {
 	while (true) {
 		{
-			// ÀÌº¥Æ®°¡ ¹ß»ı ÇÏ´Â °æ¿ì¿¡¸¸ ÇØ´ç ½º·¹µå¸¦ ±ú¿ö¼­ Çàµ¿À» ½ÇÇà
-			::WaitForSingleObject(handle, INFINITE); // ÀÌº¥Æ®°¡ ½ÅÈ£ »óÅÂ°¡ µÉ ¶§±îÁö ´ë±â
-			// ÀÌº¥Æ®°¡ ½ÅÈ£ »óÅÂ°¡ µÇ¸é ÀÚµ¿À¸·Î ¸®¼ÂµÊ
-			// Manual-Reset ÀÌº¥Æ®´Â ¼öµ¿À¸·Î ¸®¼ÂÇØ¾ß ÇÔ
-			// ::ResetEvent(handle); // ¼öµ¿ ¸®¼Â
 			unique_lock<mutex> lock(m);
-			if (!q.empty()) {
-				int32 v = q.front();
-				q.pop();
-				cout << "Consumed: " << v << endl;
-			}
+			cv.wait(lock, []() {
+				return !q.empty();
+				});
+			// 1. ë½ ì¡ìœ¼ë ¤ê³  ì‹œë„
+			// 2. ì¡°ê±´ í™•ì¸
+			// - ë§Œì¡± -> ë¹ ì ¸ë‚˜ì˜´
+			// - ë¶ˆë§Œì¡± -> ë½ì„ í’€ê³  ëŒ€ê¸° ìƒíƒœë¡œ ë“¤ì–´ê°
+
+			// notify_oneìœ¼ë¡œ ê¹¨ì›Œì§„ê±°ë©´ ì¡°ê±´ì„ ë§Œì¡± í•œê±° ì•„ë‹Œê°€? -> ì•„ë‹˜. ë‹¤ë¥¸ ìŠ¤ë ˆë“œê°€ ë¨¼ì € ë½ì„ ì¡ê³  ì¡°ê±´ì„ ë³€ê²½í–ˆì„ ìˆ˜ë„ ìˆìŒ
+			// ì´ëŸ¬í•œ ê²½ìš°ë¥¼ Surprise Wakeup ì´ë¼ê³  í•¨ -> ê·¸ë˜ì„œ ì¡°ê±´ì„ ëŒë‹¤ë¡œ ë‹¤ì‹œ í™•ì¸í•˜ëŠ” ê²ƒ
+
+			int32 v = q.front();
+			q.pop();
+			cout << "Consumed: " << v << endl;
 		}
 	}
 }
@@ -46,16 +58,9 @@ void Consumer() {
 
 int main()
 {
-	// Ä¿³Î ¿ÀºêÁ§Æ® -> Ä¿³Î¿¡¼­ °ü¸®ÇÏ´Â °´Ã¼
-	// Usage count
-	// Singnal, None-Singnal
-	// Auto -Reset, Manual-Reset
-	handle = ::CreateEvent(NULL /*º¸¾È ¼Ó¼º*/, FALSE /*¸®¼Â ¹æ¹ı*/, FALSE /*ÃÊ±â ½Ã±×³Î »óÅÂ*/, NULL);
 	thread t1(Producer);	
 	thread t2(Consumer);
 
 	t1.join();
 	t2.join();
-
-	::CloseHandle(handle);
 }
