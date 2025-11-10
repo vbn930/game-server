@@ -11,28 +11,7 @@
 
 #include <future>
 
-thread_local int32 LThreadId = 0;
-
-void ThreadMain(int32 threadId) {
-	while (true)
-	{
-		cout << "Thread num:" << LThreadId << endl;
-		this_thread::sleep_for(1s);
-	}
-}
-
 int main()
 {
-	vector<thread> threads;
-
-	for (int32 i = 0; i < 4; ++i) {
-		threads.emplace_back([i]() {
-			LThreadId = i;
-			ThreadMain(i);
-			});
-	}
-
-	for(thread& t : threads) {
-		t.join();
-	}
+	
 }
