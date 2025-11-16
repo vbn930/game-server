@@ -72,6 +72,28 @@ public:
 
 	shared_ptr<T> TryPop() {
 		CountedNodePtr oldHead = _head;
+		while (true) {
+			IncreaseHeadCount(oldHead);
+		}
+
+		Node* ptr = oldHead.ptr;
+		if (ptr == nullptr) {
+			return shared_ptr<T>();
+		}
+
+		if (_head.compare_exchange_strong(oldHead, ptr->next)) {
+			shared_ptr<T> res;
+			res.swap(ptr->data);
+			int32 countIncrease = oldHead.externalCount - 2;
+			// fetch_add는 인자로 전달된 값을 더하고, 더하기 이전의 값을 반환한다.
+			if (ptr->internalCount.fetch_add(countIncrease) == -countIncrease) {
+				delete ptr;
+			}
+			return res;
+		}
+		else if (ptr->internalCount.fetch_add(-1) == 1) {
+			delete ptr;
+		}
 	}
 
 private:
