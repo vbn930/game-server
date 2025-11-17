@@ -72,9 +72,8 @@ public:
 
 	shared_ptr<T> TryPop() {
 		CountedNodePtr oldHead = _head;
-		while (true) {
-			IncreaseHeadCount(oldHead);
-		}
+
+		IncreaseHeadCount(oldHead);
 
 		Node* ptr = oldHead.ptr;
 		if (ptr == nullptr) {
