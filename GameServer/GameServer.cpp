@@ -16,7 +16,6 @@
 class TestLock {
 	USE_LOCK;
 
-
 public:
 	void TestRead() {
 		READ_LOCK;

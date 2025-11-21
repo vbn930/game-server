@@ -8,9 +8,9 @@
 ---------------*/
 #define USE_MANY_LOCK(count)	Lock _lock[count];
 #define USE_LOCK				USE_MANY_LOCK(1);
-#define READ_LOCK_IDX(idx)		ReadLockGuard _readLockGuard_##idx(_lock[idx]);
+#define READ_LOCK_IDX(idx)		ReadLockGuard _readLockGuard_##idx(_lock[idx], typeid(this).name());
 #define READ_LOCK				READ_LOCK_IDX(0)
-#define WRITE_LOCK_IDX(idx)		WriteLockGuard _writeLockGuard_##idx(_lock[idx]);
+#define WRITE_LOCK_IDX(idx)		WriteLockGuard _writeLockGuard_##idx(_lock[idx], typeid(this).name());
 #define WRITE_LOCK				WRITE_LOCK_IDX(0)
 
 /*---------------

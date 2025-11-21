@@ -1,9 +1,13 @@
 ﻿#include "pch.h"
 #include "Lock.h"
 #include "CoreTLS.h"
+#include "DeadLockProfiler.h"
 
-void Lock::WirteLock()
+void Lock::WirteLock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PushLock(name);
+#endif
 	// 동일한 스레드가 이미 쓰기락을 소유하고 있을때, 무조건 획득
 	const uint32 lockThreadId = (_lockFlag.load() & WRITE_THREAD_MASK) >> 16;
 	if (lockThreadId == LThreadId) {
@@ -33,8 +37,11 @@ void Lock::WirteLock()
 	}
 }
 
-void Lock::WriteUnlock()
+void Lock::WriteUnlock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PopLock(name);
+#endif
 	// Read Lock 을 다 풀기 전에는 Write Lock 을 풀 수 없음
 	if ((_lockFlag.load() & READ_COUNT_MASK) != 0) {
 		CRASH("Lock::WriteUnlock Read Lock Still Acquired");
@@ -46,8 +53,11 @@ void Lock::WriteUnlock()
 	}
 }
 
-void Lock::ReadLock()
+void Lock::ReadLock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PushLock(name);
+#endif
 	// 쓰기 락을 소유한 스레드가 동일 스레드라면, 무조건 획득
 	const uint32 lockThreadId = (_lockFlag.load() & WRITE_THREAD_MASK) >> 16;
 	if (lockThreadId == LThreadId) {
@@ -72,8 +82,11 @@ void Lock::ReadLock()
 	}
 }
 
-void Lock::ReadUnlock()
+void Lock::ReadUnlock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PopLock(name);
+#endif
 	if ((_lockFlag.fetch_sub(1) & READ_COUNT_MASK) == 0) {
 		CRASH("Lock::ReadUnlock No Read Lock Acquired");
 	}
