@@ -17,8 +17,8 @@ public:
 private:
 	void Dfs(int32 here);
 private:
-	unordered_map<const char*, int32> _nameToId;
-	unordered_map<int32, const char*> _idToName;
+	unordered_map<const char*, int32> _nameToId; // 락이 실행된 오브젝트 이름을 ID로 변환
+	unordered_map<int32, const char*> _idToName; // 락이 실행된 오브젝트 ID를 이름으로 변환
 	stack<int32>					  _lockStack;
 	map<int32, set<int32>>			  _lockHistory;
 
