@@ -9,7 +9,7 @@ class MemoryPool;
 
 class Memory {
 	enum {
-		POOL_COUNT = (1024 / 32) + (2048 / 32) + (4096 / 256),
+		POOL_COUNT = (1024 / 32) + (2048 / 128) + (4096 / 256),
 		MAX_ALLOC_SIZE = 4096
 	};
 
@@ -27,7 +27,7 @@ private:
 
 template<typename Type, typename... Args>
 Type* xnew(Args&& ...args) {
-	Type* memory = static_cast<Type*>(xxalloc(sizeof(Type)));
+	Type* memory = static_cast<Type*>(PoolAllocator::Alloc(sizeof(Type)));
 
 	// placement new
 	new(memory) Type(std::forward<Args>(args)...);
@@ -37,5 +37,10 @@ Type* xnew(Args&& ...args) {
 template<typename Type>
 void xdelete(Type* obj) {
 	obj->~Type();
-	xxrelease(obj);
+	PoolAllocator::Release(obj);
+}
+
+template<typename Type>
+shared_ptr<Type> MakeShared() {
+	return shared_ptr<Type>{ xnew<Type>(), xdelete<Type> };
 }
