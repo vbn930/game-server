@@ -12,10 +12,12 @@
 #include <future>
 
 #include "ThreadManager.h"
+#include "Allocator.h"
 
 
 
 int main()
 {
-	const int MAX_NUMBER = 100'0000;
+	vector<int32, STLAllocator<int32>> v(100);
+
 }
